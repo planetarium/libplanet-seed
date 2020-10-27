@@ -1,0 +1,155 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using CommandLine;
+using Libplanet.Crypto;
+using Libplanet.Net;
+
+namespace Libplanet.Seed.Executable
+{
+    public class Options
+    {
+        [Option(
+            'd',
+            "debug",
+            Default = false,
+            HelpText = "Print logs for debugging as well.")]
+        public bool Debug { get; set; }
+
+        [Option(
+            'h',
+            "host",
+            Default = "localhost",
+            HelpText = "The host address to listen.")]
+        public string Host { get; set; }
+
+        [Option(
+            'p',
+            "port",
+            Default = 5001,
+            HelpText = "The port number to listen.")]
+        public int Port { get; set; }
+
+        [Option(
+            'w',
+            "workers",
+            Default = 30,
+            HelpText = "The number of concurrent message processing workers.")]
+        public int Workers { get; set; }
+
+        [Option(
+            'H',
+            "graphql-host",
+            Default = "localhost",
+            HelpText = "The host address to listen graphql queries.")]
+        public string GraphQLHost { get; set; }
+
+        [Option(
+            'P',
+            "graphql-port",
+            Default = 5000,
+            HelpText = "The port number to listen graphql queries.")]
+        public int GraphQLPort { get; set; }
+
+        [Option(
+            'V',
+            "app-protocol-version",
+            HelpText = "An app protocol version token.",
+            Required = true)]
+        public string AppProtocolVersionToken { get; set; }
+
+        [Option(
+            'k',
+            "private-key",
+            HelpText = "Private key used for node identifying and message signing.")]
+        public string PrivateKeyString
+        {
+            get => PrivateKey is null ? string.Empty : PrivateKey.ToString();
+
+            set
+            {
+                PrivateKey = null;
+                if (!string.IsNullOrEmpty(value))
+                {
+                    try
+                    {
+                        PrivateKey = new PrivateKey(ByteUtil.ParseHex(value));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.Error.WriteLine(
+                            "Error occurred during setting private key: {0};\n{1}",
+                            value,
+                            e);
+                    }
+                }
+            }
+        }
+
+        public PrivateKey PrivateKey { get; set; }
+
+        [Option(
+            'I',
+            "ice-server",
+            HelpText = "URL to ICE server (TURN/STUN) to work around NAT.",
+            Required = true)]
+        public string IceServerUrl
+        {
+            get
+            {
+                if (IceServer is null)
+                {
+                    return null;
+                }
+
+                Uri uri = IceServer.Urls.First();
+                var uriBuilder = new UriBuilder(uri)
+                {
+                    UserName = IceServer.Username,
+                    Password = IceServer.Credential,
+                };
+                return uriBuilder.Uri.ToString();
+            }
+
+            set
+            {
+                if (value is null)
+                {
+                    IceServer = null;
+                    return;
+                }
+
+                var uri = new Uri(value);
+                string[] userInfo = uri.UserInfo.Split(':', count: 2);
+                IceServer = new IceServer(new[] { uri }, userInfo[0], userInfo[1]);
+            }
+        }
+
+        public IceServer IceServer { get; set; }
+
+        public static Options Parse(string[] args, TextWriter errorWriter)
+        {
+            var parser = new Parser(with =>
+            {
+                with.AutoHelp = true;
+                with.EnableDashDash = true;
+                with.HelpWriter = errorWriter;
+            });
+            ParserResult<Options> result = parser.ParseArguments<Options>(args);
+
+            if (result is Parsed<Options> parsed)
+            {
+                Options options = parsed.Value;
+                return options;
+            }
+            else if (result is NotParsed<Options> notParsed)
+            {
+                System.Environment.Exit(
+                    notParsed.Errors.All(e => e.Tag is ErrorType.HelpRequestedError) ? 0 : 1
+                );
+            }
+
+            return null;
+        }
+    }
+}
