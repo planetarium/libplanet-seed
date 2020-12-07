@@ -91,8 +91,7 @@ namespace Libplanet.Seed.Executable
         [Option(
             'I',
             "ice-server",
-            HelpText = "URL to ICE server (TURN/STUN) to work around NAT.",
-            Required = true)]
+            HelpText = "URL to ICE server (TURN/STUN) to work around NAT.")]
         public string IceServerUrl
         {
             get
