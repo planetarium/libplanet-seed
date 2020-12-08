@@ -16,14 +16,14 @@ FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 WORKDIR /app
 COPY --from=build-env /app/out .
 
-# Install native deps & utilities for production
+# Install native deps
 RUN apt-get update \
     && apt-get install -y --allow-unauthenticated \
-        libc6-dev jq \
+        libc6-dev \
      && rm -rf /var/lib/apt/lists/*
 
 # Runtime settings
 EXPOSE 5000
 VOLUME /data
 
-ENTRYPOINT ["dotnet", "Libplanet.Seed.Executable.dll"]
+ENTRYPOINT ["/app/Libplanet.Seed.Executable"]
