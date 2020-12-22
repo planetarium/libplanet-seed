@@ -10,7 +10,7 @@ using Serilog;
 namespace Libplanet.Seed
 {
     public class SeedStartup<T>
-        where T : class, ITransportContext
+        where T : class, IContext
     {
         public SeedStartup(IConfiguration configuration)
         {
@@ -35,7 +35,7 @@ namespace Libplanet.Seed
                     p.FeatureProviders.Add(
                         new GenericControllerFeatureProvider()))
                 .AddNewtonsoftJson();
-            services.AddSingleton<ITransportContext, T>();
+            services.AddSingleton<IContext, T>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

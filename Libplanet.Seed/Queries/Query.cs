@@ -1,17 +1,18 @@
 ﻿using System.Collections.Generic;
 using GraphQL.Types;
 using Libplanet.Net;
+using Libplanet.Net.Protocols;
 using Libplanet.Seed.GraphTypes;
 
 namespace Libplanet.Seed.Queries
 {
     public class Query : ObjectGraphType
     {
-        private static NetMQTransport _transport;
+        private static RoutingTable _table;
 
-        public Query(NetMQTransport transport)
+        public Query(RoutingTable table)
         {
-            _transport = transport;
+            _table = table;
 
             Field<NonNullGraphType<ListGraphType<NonNullGraphType<PeerType>>>>(
                 "peers",
@@ -19,6 +20,6 @@ namespace Libplanet.Seed.Queries
             );
         }
 
-        internal static IEnumerable<BoundPeer> ListPeers => _transport.Peers;
+        internal static IEnumerable<BoundPeer> ListPeers => _table.Peers;
     }
 }

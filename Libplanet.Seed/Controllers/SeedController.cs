@@ -8,10 +8,10 @@ namespace Libplanet.Seed.Controllers
 {
     public class SeedController : Controller
     {
-        private readonly ITransportContext _context;
+        private readonly IContext _context;
         private readonly Schema _schema;
 
-        public SeedController(ITransportContext context)
+        public SeedController(IContext context)
         {
             _context = context;
             _schema = context.GetSchema();
