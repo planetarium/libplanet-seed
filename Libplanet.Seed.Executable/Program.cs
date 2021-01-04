@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Libplanet.Crypto;
 using Libplanet.Net;
+using Libplanet.Net.Protocols;
 using Libplanet.Seed.Executable.Exceptions;
 using Libplanet.Seed.Interfaces;
 using Microsoft.AspNetCore;
@@ -32,19 +33,22 @@ namespace Libplanet.Seed.Executable
             {
                 var privateKey = options.PrivateKey ?? new PrivateKey();
 
+                RoutingTable table = new RoutingTable(privateKey.ToAddress());
                 NetMQTransport transport = new NetMQTransport(
+                    table,
                     privateKey,
                     AppProtocolVersion.FromToken(options.AppProtocolVersionToken),
-                    null,
-                    null,
                     null,
                     options.Workers,
                     options.Host,
                     options.Port,
                     new[] { options.IceServer },
-                    null,
-                    Log.Logger);
-                Startup.TransportSingleton = transport;
+                    null);
+                KademliaProtocol peerDiscovery = new KademliaProtocol(
+                    table,
+                    transport,
+                    privateKey.ToAddress());
+                Startup.TableSingleton = table;
 
                 IWebHost webHost = WebHost.CreateDefaultBuilder()
                     .UseStartup<SeedStartup<Startup>>()
@@ -64,7 +68,9 @@ namespace Libplanet.Seed.Executable
                     {
                         await Task.WhenAll(
                             webHost.RunAsync(cts.Token),
-                            StartTransportAsync(transport, cts.Token)
+                            StartTransportAsync(transport, cts.Token),
+                            RefreshTableAsync(peerDiscovery, cts.Token),
+                            RebuildConnectionAsync(peerDiscovery, cts.Token)
                         );
                     }
                     catch (OperationCanceledException)
@@ -92,11 +98,62 @@ namespace Libplanet.Seed.Executable
             await task;
         }
 
-        private class Startup : ITransportContext
+        private static async Task RefreshTableAsync(
+            KademliaProtocol protocol,
+            CancellationToken cancellationToken)
         {
-            public NetMQTransport Transport => TransportSingleton;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
+                    await protocol.RefreshTableAsync(TimeSpan.FromSeconds(10), cancellationToken);
+                    await protocol.CheckReplacementCacheAsync(cancellationToken);
+                }
+                catch (OperationCanceledException e)
+                {
+                    Log.Warning(e, $"{nameof(RefreshTableAsync)}() is cancelled.");
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    var msg = "Unexpected exception occurred during " +
+                              $"{nameof(RefreshTableAsync)}(): {{0}}";
+                    Log.Warning(e, msg, e);
+                }
+            }
+        }
 
-            internal static NetMQTransport TransportSingleton { get; set; }
+        private static async Task RebuildConnectionAsync(
+            KademliaProtocol protocol,
+            CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(10), cancellationToken);
+                    await protocol.RebuildConnectionAsync(cancellationToken);
+                }
+                catch (OperationCanceledException e)
+                {
+                    Log.Warning(e, $"{nameof(RebuildConnectionAsync)}() is cancelled.");
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    var msg = "Unexpected exception occurred during " +
+                              $"{nameof(RebuildConnectionAsync)}(): {{0}}";
+                    Log.Warning(e, msg, e);
+                }
+            }
+        }
+
+        private class Startup : IContext
+        {
+            public RoutingTable Table => TableSingleton;
+
+            internal static RoutingTable TableSingleton { get; set; }
         }
     }
 }
