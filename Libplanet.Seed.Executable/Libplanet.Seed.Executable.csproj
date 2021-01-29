@@ -28,7 +28,7 @@
       </IncludeAssets>
     </PackageReference>
     <PackageReference Include="CommandLineParser" Version="2.6.0" />
-    <PackageReference Include="Libplanet" Version="0.11.0-dev.20201222090155" />
+    <PackageReference Include="Libplanet" Version="0.11.0-dev.20210129054518" />
     <PackageReference Include="Planetarium.NetMQ" Version="4.0.0.260-planetarium" />
   </ItemGroup>
 
