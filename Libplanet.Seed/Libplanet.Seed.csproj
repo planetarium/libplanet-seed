@@ -27,7 +27,7 @@
       </IncludeAssets>
     </PackageReference>
     <PackageReference Include="GraphQL" Version="2.4.0" />
-    <PackageReference Include="Libplanet" Version="0.11.0-dev.20210204113939" />
+    <PackageReference Include="Libplanet" Version="0.11.0-dev.20210205090355" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
