@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Libplanet.Crypto;
@@ -32,7 +34,6 @@ namespace Libplanet.Seed.Executable
             try
             {
                 var privateKey = options.PrivateKey ?? new PrivateKey();
-
                 RoutingTable table = new RoutingTable(privateKey.ToAddress());
                 NetMQTransport transport = new NetMQTransport(
                     table,
@@ -66,12 +67,23 @@ namespace Libplanet.Seed.Executable
 
                     try
                     {
-                        await Task.WhenAll(
+                        var tasks = new List<Task>
+                        {
                             webHost.RunAsync(cts.Token),
                             StartTransportAsync(transport, cts.Token),
                             RefreshTableAsync(peerDiscovery, cts.Token),
-                            RebuildConnectionAsync(peerDiscovery, cts.Token)
-                        );
+                            RebuildConnectionAsync(peerDiscovery, cts.Token),
+                        };
+                        if (!(options.Peers is null) && options.Peers.Any())
+                        {
+                            tasks.Add(CheckStaticPeersAsync(
+                                options.Peers,
+                                table,
+                                peerDiscovery,
+                                cts.Token));
+                        }
+
+                        await Task.WhenAll(tasks);
                     }
                     catch (OperationCanceledException)
                     {
@@ -144,6 +156,43 @@ namespace Libplanet.Seed.Executable
                 {
                     var msg = "Unexpected exception occurred during " +
                               $"{nameof(RebuildConnectionAsync)}(): {{0}}";
+                    Log.Warning(e, msg, e);
+                }
+            }
+        }
+
+        private static async Task CheckStaticPeersAsync(
+            IEnumerable<BoundPeer> peers,
+            RoutingTable table,
+            KademliaProtocol protocol,
+            CancellationToken cancellationToken)
+        {
+            var boundPeers = peers as BoundPeer[] ?? peers.ToArray();
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
+                    Log.Warning("Checking static peers. {@Peers}", boundPeers);
+                    var peersToAdd = boundPeers.Where(peer => !table.Contains(peer)).ToArray();
+                    if (peersToAdd.Any())
+                    {
+                        Log.Warning("Some of peers are not in routing table. {@Peers}", peersToAdd);
+                        await protocol.AddPeersAsync(
+                            peersToAdd,
+                            TimeSpan.FromSeconds(5),
+                            cancellationToken);
+                    }
+                }
+                catch (OperationCanceledException e)
+                {
+                    Log.Warning(e, $"{nameof(CheckStaticPeersAsync)}() is cancelled.");
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    var msg = "Unexpected exception occurred during " +
+                              $"{nameof(CheckStaticPeersAsync)}(): {{0}}";
                     Log.Warning(e, msg, e);
                 }
             }

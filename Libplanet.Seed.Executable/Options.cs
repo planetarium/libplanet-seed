@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using CommandLine;
 using Libplanet.Crypto;
 using Libplanet.Net;
@@ -125,6 +127,45 @@ namespace Libplanet.Seed.Executable
         }
 
         public IceServer IceServer { get; set; }
+
+        [Option(
+            longName: "peers",
+            HelpText = "A list of peers that must exist in the peer table. " +
+                       "The format of each peer is a comma-separated triple of a peer's " +
+                       "hexadecimal public key, host, and port number.")]
+        public IEnumerable<string> PeerStrings
+        {
+            get
+            {
+                return Peers?.Select(peer => peer.ToString());
+            }
+
+            set
+            {
+                if (value is null)
+                {
+                    Peers = null;
+                    return;
+                }
+
+                Peers = value.Select(str =>
+                {
+                    string[] parts = str.Split(',');
+                    if (parts.Length != 3)
+                    {
+                        throw new FormatException(
+                            $"A peer must be a command-separated triple. {str}");
+                    }
+
+                    byte[] publicKeyBytes = ByteUtil.ParseHex(parts[0]);
+                    var publicKey = new PublicKey(publicKeyBytes);
+                    var endpoint = new DnsEndPoint(parts[1], int.Parse(parts[2]));
+                    return new BoundPeer(publicKey, endpoint);
+                });
+            }
+        }
+
+        public IEnumerable<BoundPeer> Peers { get; set; }
 
         public static Options Parse(string[] args, TextWriter errorWriter)
         {
