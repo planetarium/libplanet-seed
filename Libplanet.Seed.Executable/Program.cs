@@ -22,9 +22,33 @@ namespace Libplanet.Seed.Executable
             Options options = Options.Parse(args, Console.Error);
 
             var loggerConfig = new LoggerConfiguration();
-            loggerConfig = options.Debug
-                ? loggerConfig.MinimumLevel.Debug()
-                : loggerConfig.MinimumLevel.Information();
+            switch (options.LogLevel)
+            {
+                case "error":
+                    loggerConfig = loggerConfig.MinimumLevel.Error();
+                    break;
+
+                case "warning":
+                    loggerConfig = loggerConfig.MinimumLevel.Warning();
+                    break;
+
+                case "information":
+                    loggerConfig = loggerConfig.MinimumLevel.Information();
+                    break;
+
+                case "debug":
+                    loggerConfig = loggerConfig.MinimumLevel.Debug();
+                    break;
+
+                case "verbose":
+                    loggerConfig = loggerConfig.MinimumLevel.Verbose();
+                    break;
+
+                default:
+                    loggerConfig = loggerConfig.MinimumLevel.Information();
+                    break;
+            }
+
             loggerConfig = loggerConfig
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .Enrich.FromLogContext()
@@ -67,6 +91,15 @@ namespace Libplanet.Seed.Executable
 
                     try
                     {
+                        await peerDiscovery.BootstrapAsync(
+                            options.Peers,
+                            TimeSpan.FromSeconds(5),
+                            TimeSpan.FromSeconds(5),
+                            Kademlia.MaxDepth,
+                            cts.Token);
+
+                        Log.Warning("Bootstrap finished.");
+
                         var tasks = new List<Task>
                         {
                             webHost.RunAsync(cts.Token),
