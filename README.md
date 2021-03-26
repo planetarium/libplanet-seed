@@ -10,7 +10,8 @@ $ dotnet run --project ./Libplanet.Seed.Executable/Libplanet.Seed.Executable.csp
 Libplanet.Seed.Executable 1.0.0
 Copyright (C) 2020 Libplanet.Seed.Executable
 
-  -d, --debug                   (Default: false) Print logs for debugging as well.
+  -l, --log-level               (Default: information) Minimum severity for logging.
+                                Should be one of error, warning, information, debug, verbose.
   -h, --host                    (Default: localhost) The host address to listen.
   -p, --port                    (Default: 5001) The port number to listen.
   -w, --workers                 (Default: 30) The number of concurrent message processing workers.
@@ -18,14 +19,17 @@ Copyright (C) 2020 Libplanet.Seed.Executable
   -P, --graphql-port            (Default: 5000) The port number to listen graphql queries.
   -V, --app-protocol-version    Required. An app protocol version token.
   -k, --private-key             Private key used for node identifying and message signing.
-  -I, --ice-server              Required. URL to ICE server (TURN/STUN) to work around NAT.
+  -I, --ice-server              URL to ICE server (TURN/STUN) to work around NAT.
+  --peers                       A list of peers that must exist in the peer table.
+                                The format of each peer is a comma-separated triple of a peer's
+                                hexadecimal public key, host, and port number.
   --help                        Display this help screen.
   --version                     Display version information.
 ```
 
 ## Command Line Options
 
- - `-d`, `--debug`: Print logs for debugging as well.
+ - `-l`, `--log-level`: Minimum severity for logging. Should be one of error, warning, information, debug, verbose.
  - `-h`, `--host`: The host address to listen.
  - `-p`, `--port`: The port number to listen.
  - `-w`, `--workers`: The number of concurrent message processing workers.
@@ -34,6 +38,7 @@ Copyright (C) 2020 Libplanet.Seed.Executable
  - `-V`, `--app-protocol-version`: An app protocol version token.
  - `-k`, `--private-key`: Private key used for node identifying and message signing.
  - `-I`, `--ice-server`: URL to ICE server (TURN/STUN) to work around NAT.
+ - `--peers`: A list of peers that must exist in the peer table. The format of each peer is a comma-separated triple of a peer's hexadecimal public key, host, and port number. If omitted, peer checking is automatically disabled.
 
 ## Docker Build
 
