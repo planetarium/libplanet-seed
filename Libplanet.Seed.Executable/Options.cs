@@ -12,11 +12,12 @@ namespace Libplanet.Seed.Executable
     public class Options
     {
         [Option(
-            'd',
-            "debug",
-            Default = false,
-            HelpText = "Print logs for debugging as well.")]
-        public bool Debug { get; set; }
+            'l',
+            "log-level",
+            Default = "information",
+            HelpText = "Minimum severity for logging. " +
+                       "Should be one of error, warning, information, debug, verbose.")]
+        public string LogLevel { get; set; }
 
         [Option(
             'h',
