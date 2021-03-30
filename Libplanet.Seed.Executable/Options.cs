@@ -22,16 +22,16 @@ namespace Libplanet.Seed.Executable
         [Option(
             'h',
             "host",
-            Default = "localhost",
+            Default = null,
             HelpText = "The host address to listen.")]
         public string Host { get; set; }
 
         [Option(
             'p',
             "port",
-            Default = 5001,
+            Default = null,
             HelpText = "The port number to listen.")]
-        public int Port { get; set; }
+        public int? Port { get; set; }
 
         [Option(
             'w',
