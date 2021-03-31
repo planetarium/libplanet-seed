@@ -17,6 +17,7 @@ namespace Libplanet.Seed.Executable
 {
     public class Program
     {
+#pragma warning disable MEN003 // Method Main must be no longer than 120 lines
         public static async Task Main(string[] args)
         {
             Options options = Options.Parse(args, Console.Error);
@@ -54,6 +55,20 @@ namespace Libplanet.Seed.Executable
                 .Enrich.FromLogContext()
                 .WriteTo.Console();
             Log.Logger = loggerConfig.CreateLogger();
+
+            if (options.IceServer is null && options.Host is null)
+            {
+                Log.Error(
+                    "-h/--host is required if -I/--ice-server is not given."
+                );
+                Environment.Exit(1);
+                return;
+            }
+
+            if (!(options.IceServer is null || options.Host is null))
+            {
+                Log.Warning("-I/--ice-server will not work because -h/--host is given.");
+            }
 
             try
             {
@@ -132,6 +147,7 @@ namespace Libplanet.Seed.Executable
                                         + $"  expected values: {expectedValues}");
             }
         }
+#pragma warning restore MEN003 // Method Main must be no longer than 120 lines
 
         private static async Task StartTransportAsync(
             NetMQTransport transport,
