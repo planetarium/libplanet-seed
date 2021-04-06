@@ -168,7 +168,7 @@ namespace Libplanet.Seed.Executable
                 try
                 {
                     await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
-                    await protocol.RefreshTableAsync(TimeSpan.FromSeconds(10), cancellationToken);
+                    await protocol.RefreshTableAsync(TimeSpan.FromSeconds(60), cancellationToken);
                     await protocol.CheckReplacementCacheAsync(cancellationToken);
                 }
                 catch (OperationCanceledException e)
@@ -194,7 +194,7 @@ namespace Libplanet.Seed.Executable
                 try
                 {
                     await Task.Delay(TimeSpan.FromMinutes(10), cancellationToken);
-                    await protocol.RebuildConnectionAsync(cancellationToken);
+                    await protocol.RebuildConnectionAsync(Kademlia.MaxDepth, cancellationToken);
                 }
                 catch (OperationCanceledException e)
                 {
