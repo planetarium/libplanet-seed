@@ -14,12 +14,12 @@ namespace Libplanet.Seed.Queries
         {
             _table = table;
 
-            Field<NonNullGraphType<ListGraphType<NonNullGraphType<PeerType>>>>(
+            Field<NonNullGraphType<ListGraphType<NonNullGraphType<PeerStateType>>>>(
                 "peers",
                 resolve: _ => ListPeers
             );
         }
 
-        internal static IEnumerable<BoundPeer> ListPeers => _table.Peers;
+        internal static IEnumerable<PeerState> ListPeers => _table.PeerStates;
     }
 }
