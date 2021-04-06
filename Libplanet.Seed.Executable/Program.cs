@@ -106,15 +106,6 @@ namespace Libplanet.Seed.Executable
 
                     try
                     {
-                        await peerDiscovery.BootstrapAsync(
-                            options.Peers,
-                            TimeSpan.FromSeconds(5),
-                            TimeSpan.FromSeconds(5),
-                            Kademlia.MaxDepth,
-                            cts.Token);
-
-                        Log.Warning("Bootstrap finished.");
-
                         var tasks = new List<Task>
                         {
                             webHost.RunAsync(cts.Token),
