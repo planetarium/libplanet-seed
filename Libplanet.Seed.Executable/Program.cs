@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Libplanet.Crypto;
 using Libplanet.Net;
 using Libplanet.Net.Protocols;
+using Libplanet.Net.Transports;
 using Libplanet.Seed.Executable.Exceptions;
 using Libplanet.Seed.Interfaces;
 using Microsoft.AspNetCore;
