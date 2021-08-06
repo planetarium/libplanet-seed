@@ -84,7 +84,8 @@ namespace Libplanet.Seed.Executable
                     options.Host,
                     options.Port,
                     new[] { options.IceServer },
-                    null);
+                    null,
+                    options.MinimumBroadcastTarget);
                 KademliaProtocol peerDiscovery = new KademliaProtocol(
                     table,
                     transport,

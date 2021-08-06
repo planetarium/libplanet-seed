@@ -55,6 +55,13 @@ namespace Libplanet.Seed.Executable
         public int GraphQLPort { get; set; }
 
         [Option(
+            'M',
+            "minimum-broadcast-target",
+            Default = 10,
+            HelpText = "The number of minimum targets to broadcast.")]
+        public int MinimumBroadcastTarget { get; set; }
+
+        [Option(
             'V',
             "app-protocol-version",
             HelpText = "An app protocol version token.",
