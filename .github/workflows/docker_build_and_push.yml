@@ -11,8 +11,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker build . -t docker.pkg.github.com/planetarium/libplanet-seed/libplanet-seed:git-${{ github.sha }}
+      run: docker build . -t planetariumhq/libplanet-seed:git-${{ github.sha }}
     - name: login
-      run: docker login docker.pkg.github.com -u '${{ secrets.GH_USERNAME }}' -p '${{ secrets.GH_ACCESS_TOKEN }}'
+      run: docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}'
     - name: push git version
-      run: docker push docker.pkg.github.com/planetarium/libplanet-seed/libplanet-seed:git-${{ github.sha }}
+      run: docker push planetariumhq/libplanet-seed:git-${{ github.sha }}
