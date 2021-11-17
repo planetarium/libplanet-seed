@@ -110,17 +110,6 @@ namespace Libplanet.Seed.Executable
                         return;
                 }
 
-                transport = new NetMQTransport(
-                    table,
-                    privateKey,
-                    AppProtocolVersion.FromToken(options.AppProtocolVersionToken),
-                    null,
-                    options.Workers,
-                    options.Host,
-                    options.Port,
-                    new[] { options.IceServer },
-                    null,
-                    options.MinimumBroadcastTarget);
                 KademliaProtocol peerDiscovery = new KademliaProtocol(
                     table,
                     transport,
