@@ -6,6 +6,7 @@ using System.Net;
 using CommandLine;
 using Libplanet.Crypto;
 using Libplanet.Net;
+using Serilog;
 
 namespace Libplanet.Seed.Executable
 {
@@ -37,7 +38,8 @@ namespace Libplanet.Seed.Executable
             'w',
             "workers",
             Default = 30,
-            HelpText = "The number of concurrent message processing workers.")]
+            HelpText = "The number of concurrent message processing workers. " +
+                "Ignored if transport type is set to \"tcp\".")]
         public int Workers { get; set; }
 
         [Option(
@@ -67,6 +69,13 @@ namespace Libplanet.Seed.Executable
             HelpText = "An app protocol version token.",
             Required = true)]
         public string AppProtocolVersionToken { get; set; }
+
+        [Option(
+            't',
+            "transport-type",
+            Default = "tcp",
+            HelpText = "The type of transport to use. Should be either \"tcp\" or \"netmq\".")]
+        public string TransportType { get; set; }
 
         [Option(
             'k',

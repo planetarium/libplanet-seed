@@ -75,7 +75,42 @@ namespace Libplanet.Seed.Executable
             {
                 var privateKey = options.PrivateKey ?? new PrivateKey();
                 RoutingTable table = new RoutingTable(privateKey.ToAddress());
-                NetMQTransport transport = new NetMQTransport(
+                ITransport transport;
+                switch (options.TransportType)
+                {
+                    case "tcp":
+                        transport = new TcpTransport(
+                            table,
+                            privateKey,
+                            AppProtocolVersion.FromToken(options.AppProtocolVersionToken),
+                            null,
+                            host: options.Host,
+                            listenPort: options.Port,
+                            iceServers: new[] { options.IceServer },
+                            differentAppProtocolVersionEncountered: null,
+                            minimumBroadcastTarget: options.MinimumBroadcastTarget);
+                        break;
+                    case "netmq":
+                        transport = new NetMQTransport(
+                            table,
+                            privateKey,
+                            AppProtocolVersion.FromToken(options.AppProtocolVersionToken),
+                            null,
+                            workers: options.Workers,
+                            host: options.Host,
+                            listenPort: options.Port,
+                            iceServers: new[] { options.IceServer },
+                            differentAppProtocolVersionEncountered: null,
+                            minimumBroadcastTarget: options.MinimumBroadcastTarget);
+                        break;
+                    default:
+                        Log.Error(
+                            "-t/--transport-type must be either \"tcp\" or \"netmq\".");
+                        Environment.Exit(1);
+                        return;
+                }
+
+                transport = new NetMQTransport(
                     table,
                     privateKey,
                     AppProtocolVersion.FromToken(options.AppProtocolVersionToken),
@@ -143,11 +178,11 @@ namespace Libplanet.Seed.Executable
 #pragma warning restore MEN003 // Method Main must be no longer than 120 lines
 
         private static async Task StartTransportAsync(
-            NetMQTransport transport,
+            ITransport transport,
             CancellationToken cancellationToken)
         {
             await transport.StartAsync(cancellationToken);
-            Task task = transport.RunAsync(cancellationToken);
+            Task task = transport.StartAsync(cancellationToken);
             await transport.WaitForRunningAsync();
             await task;
         }

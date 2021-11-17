@@ -17,6 +17,7 @@ Copyright (C) 2020 Libplanet.Seed.Executable
   -w, --workers                 (Default: 30) The number of concurrent message processing workers.
   -H, --graphql-host            (Default: localhost) The host address to listen graphql queries.
   -P, --graphql-port            (Default: 5000) The port number to listen graphql queries.
+  -t, --transport-type          (Default: tcp) The type of transport to use. Should be either "tcp" or "netmq".
   -V, --app-protocol-version    Required. An app protocol version token.
   -k, --private-key             Private key used for node identifying and message signing.
   -I, --ice-server              URL to ICE server (TURN/STUN) to work around NAT.
@@ -38,6 +39,7 @@ Copyright (C) 2020 Libplanet.Seed.Executable
  - `-V`, `--app-protocol-version`: An app protocol version token.
  - `-k`, `--private-key`: Private key used for node identifying and message signing.
  - `-I`, `--ice-server`: URL to ICE server (TURN/STUN) to work around NAT.
+ - `-t`, `--transport-type`: The type of transport to use.
  - `--peers`: A list of peers that must exist in the peer table. The format of each peer is a comma-separated triple of a peer's hexadecimal public key, host, and port number. If omitted, peer checking is automatically disabled.
 
 ## Docker Build
