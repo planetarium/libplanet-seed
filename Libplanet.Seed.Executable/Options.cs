@@ -14,6 +14,7 @@ namespace Libplanet.Seed.Executable
         [Option(
             'l',
             "log-level",
+            Required = false,
             Default = "information",
             HelpText = "Minimum severity for logging. " +
                        "Should be one of error, warning, information, debug, verbose.")]
@@ -22,6 +23,7 @@ namespace Libplanet.Seed.Executable
         [Option(
             'h',
             "host",
+            Required = false,
             Default = null,
             HelpText = "The host address to listen.")]
         public string? Host { get; set; }
@@ -29,6 +31,7 @@ namespace Libplanet.Seed.Executable
         [Option(
             'p',
             "port",
+            Required = false,
             Default = null,
             HelpText = "The port number to listen.")]
         public int? Port { get; set; }
@@ -36,6 +39,7 @@ namespace Libplanet.Seed.Executable
         [Option(
             'w',
             "workers",
+            Required = false,
             Default = 30,
             HelpText = "The number of concurrent message processing workers. " +
                 "Ignored if transport type is set to \"tcp\".")]
@@ -44,6 +48,7 @@ namespace Libplanet.Seed.Executable
         [Option(
             'H',
             "graphql-host",
+            Required = false,
             Default = "localhost",
             HelpText = "The host address to listen graphql queries.")]
         public string? GraphQLHost { get; set; }
@@ -51,6 +56,7 @@ namespace Libplanet.Seed.Executable
         [Option(
             'P',
             "graphql-port",
+            Required = false,
             Default = 5000,
             HelpText = "The port number to listen graphql queries.")]
         public int GraphQLPort { get; set; }
@@ -58,13 +64,14 @@ namespace Libplanet.Seed.Executable
         [Option(
             'V',
             "app-protocol-version",
-            HelpText = "An app protocol version token.",
-            Required = true)]
+            Required = true,
+            HelpText = "An app protocol version token.")]
         public string? AppProtocolVersionToken { get; set; }
 
         [Option(
             't',
             "transport-type",
+            Required = false,
             Default = "tcp",
             HelpText = "The type of transport to use. Should be either \"tcp\" or \"netmq\".")]
         public string TransportType { get; set; } = "tcp";
@@ -72,6 +79,7 @@ namespace Libplanet.Seed.Executable
         [Option(
             'k',
             "private-key",
+            Required = true,
             HelpText = "Private key used for node identifying and message signing.")]
         public string PrivateKeyString
         {
@@ -100,6 +108,8 @@ namespace Libplanet.Seed.Executable
         [Option(
             'I',
             "ice-server",
+            Required = false,
+            Default = "",
             HelpText = "URL to ICE server (TURN/STUN) to work around NAT.")]
         public string IceServerUrl
         {
@@ -121,10 +131,12 @@ namespace Libplanet.Seed.Executable
 
         [Option(
             longName: "peers",
+            Required = false,
+            Default = new string[] { },
             HelpText = "A list of peers that must exist in the peer table. " +
                        "The format of each peer is a comma-separated triple of a peer's " +
                        "hexadecimal public key, host, and port number.")]
-        public IEnumerable<string>? PeerStrings
+        public IEnumerable<string> PeerStrings
         {
             get
             {
@@ -133,12 +145,6 @@ namespace Libplanet.Seed.Executable
 
             set
             {
-                if (value is null)
-                {
-                    Peers = new BoundPeer[] { };
-                    return;
-                }
-
                 Peers = value.Select(str =>
                 {
                     string[] parts = str.Split(',');
@@ -156,7 +162,37 @@ namespace Libplanet.Seed.Executable
             }
         }
 
-        public IEnumerable<BoundPeer> Peers { get; set; } = new BoundPeer[] { };
+        public IEnumerable<BoundPeer> Peers { get; private set; } = new BoundPeer[] { };
+
+        [Option(
+            longName: "maximumPeersToRefresh",
+            Required = false,
+            Default = int.MaxValue,
+            HelpText = "Maximum number of peers to be refreshed at once " +
+                       "in periodic peer table refreshing task.")]
+        public int MaximumPeersToRefresh { get; set; }
+
+        [Option(
+            longName: "refreshInterval",
+            Required = false,
+            Default = 120,
+            HelpText = "Period in second of the peer table refreshing task.")]
+        public int RefreshInterval { get; set; }
+
+        [Option(
+            longName: "peerLifetime",
+            Required = false,
+            Default = 120,
+            HelpText = "Lifespan by second determining whether " +
+                       "a peer is stale and needs refreshing.")]
+        public int PeerLifetime { get; set; }
+
+        [Option(
+            longName: "pingTimeout",
+            Required = false,
+            Default = 5,
+            HelpText = "Timeout by second of reply to the pong message.")]
+        public int PingTimeout { get; set; }
 
         public static Options Parse(string[] args, TextWriter errorWriter)
         {

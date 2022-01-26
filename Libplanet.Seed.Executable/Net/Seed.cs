@@ -16,11 +16,11 @@ namespace Libplanet.Seed.Executable.Net
 {
     public class Seed
     {
-        private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds(10);
-        private readonly TimeSpan _peerLifetime = TimeSpan.FromSeconds(120);
-        private readonly TimeSpan _pingTimeout = TimeSpan.FromSeconds(5);
+        private readonly int _maximumPeersToRefresh;
+        private readonly TimeSpan _refreshInterval;
+        private readonly TimeSpan _peerLifetime;
+        private readonly TimeSpan _pingTimeout;
 
-        private readonly PrivateKey _privateKey;
         private readonly ITransport _transport;
         private readonly CancellationTokenSource _runtimeCancellationTokenSource;
         private readonly ILogger _logger;
@@ -32,9 +32,16 @@ namespace Libplanet.Seed.Executable.Net
             int workers,
             IceServer[] iceServers,
             AppProtocolVersion appProtocolVersion,
-            string transportType)
+            string transportType,
+            int maximumPeersToToRefresh,
+            TimeSpan refreshInterval,
+            TimeSpan peerLifetime,
+            TimeSpan pingTimeout)
         {
-            _privateKey = privateKey;
+            _maximumPeersToRefresh = maximumPeersToToRefresh;
+            _refreshInterval = refreshInterval;
+            _peerLifetime = peerLifetime;
+            _pingTimeout = pingTimeout;
             _runtimeCancellationTokenSource = new CancellationTokenSource();
             switch (transportType)
             {
@@ -164,7 +171,8 @@ namespace Libplanet.Seed.Executable.Net
                     {
                         _logger.Error(
                             e,
-                            "Unexpected error occurred during ping to {Peer}.",
+                            "Unexpected error occurred during {FName} to {Peer}.",
+                            nameof(AddPeersAsync),
                             peer);
                     }
                 });
@@ -178,11 +186,6 @@ namespace Libplanet.Seed.Executable.Net
             peerInfo.BoundPeer = peer;
             peerInfo.LastUpdated = DateTimeOffset.UtcNow;
             peerInfo.Latency = latency;
-            _logger.Debug(
-                "Update peer: {@Peer} {@LastUpdated} {@Latency}",
-                peerInfo.BoundPeer,
-                peerInfo.LastUpdated,
-                peerInfo.Latency);
             return PeerInfos.AddOrUpdate(
                 peer.Address,
                 peerInfo,
@@ -195,13 +198,27 @@ namespace Libplanet.Seed.Executable.Net
             {
                 try
                 {
+                    // FIXME: Ordered selection of peers may cause some peers does not refreshed
+                    // forever.
                     await Task.Delay(_refreshInterval, cancellationToken);
-                    IEnumerable<BoundPeer> peersToUpdate = PeerInfos.Values
+                    BoundPeer[] peersToUpdate = PeerInfos.Values
                         .Where(
                             peerState => DateTimeOffset.UtcNow - peerState.LastUpdated >
                                          _peerLifetime)
-                        .Select(state => state.BoundPeer);
-                    await AddPeersAsync(peersToUpdate.ToArray(), _pingTimeout, cancellationToken);
+                        .Select(state => state.BoundPeer)
+                        .Take(_maximumPeersToRefresh)
+                        .ToArray();
+                    if (peersToUpdate.Any())
+                    {
+                        _logger.Debug(
+                            "Refreshing peers in table. (Total: {Total}, Candidate: {Candidate})",
+                            Peers.Count(),
+                            peersToUpdate.Length);
+                        await AddPeersAsync(
+                            peersToUpdate.ToArray(),
+                            _pingTimeout,
+                            cancellationToken);
+                    }
                 }
                 catch (OperationCanceledException)
                 {

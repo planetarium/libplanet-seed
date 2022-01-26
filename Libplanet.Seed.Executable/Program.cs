@@ -78,7 +78,11 @@ namespace Libplanet.Seed.Executable
                     options.Workers,
                     options.IceServer is null ? new IceServer[] { } : new[] { options.IceServer },
                     AppProtocolVersion.FromToken(options.AppProtocolVersionToken),
-                    options.TransportType);
+                    options.TransportType,
+                    maximumPeersToToRefresh: options.MaximumPeersToRefresh,
+                    refreshInterval: TimeSpan.FromSeconds(options.RefreshInterval),
+                    peerLifetime: TimeSpan.FromSeconds(options.PeerLifetime),
+                    pingTimeout: TimeSpan.FromSeconds(options.PingTimeout));
                 Startup.Seed = seed;
 
                 IWebHost webHost = WebHost.CreateDefaultBuilder()
