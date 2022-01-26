@@ -6,7 +6,6 @@ using System.Net;
 using CommandLine;
 using Libplanet.Crypto;
 using Libplanet.Net;
-using Serilog;
 
 namespace Libplanet.Seed.Executable
 {
@@ -18,14 +17,14 @@ namespace Libplanet.Seed.Executable
             Default = "information",
             HelpText = "Minimum severity for logging. " +
                        "Should be one of error, warning, information, debug, verbose.")]
-        public string LogLevel { get; set; }
+        public string? LogLevel { get; set; }
 
         [Option(
             'h',
             "host",
             Default = null,
             HelpText = "The host address to listen.")]
-        public string Host { get; set; }
+        public string? Host { get; set; }
 
         [Option(
             'p',
@@ -47,7 +46,7 @@ namespace Libplanet.Seed.Executable
             "graphql-host",
             Default = "localhost",
             HelpText = "The host address to listen graphql queries.")]
-        public string GraphQLHost { get; set; }
+        public string? GraphQLHost { get; set; }
 
         [Option(
             'P',
@@ -57,25 +56,18 @@ namespace Libplanet.Seed.Executable
         public int GraphQLPort { get; set; }
 
         [Option(
-            'M',
-            "minimum-broadcast-target",
-            Default = 10,
-            HelpText = "The number of minimum targets to broadcast.")]
-        public int MinimumBroadcastTarget { get; set; }
-
-        [Option(
             'V',
             "app-protocol-version",
             HelpText = "An app protocol version token.",
             Required = true)]
-        public string AppProtocolVersionToken { get; set; }
+        public string? AppProtocolVersionToken { get; set; }
 
         [Option(
             't',
             "transport-type",
             Default = "tcp",
             HelpText = "The type of transport to use. Should be either \"tcp\" or \"netmq\".")]
-        public string TransportType { get; set; }
+        public string TransportType { get; set; } = "tcp";
 
         [Option(
             'k',
@@ -83,8 +75,6 @@ namespace Libplanet.Seed.Executable
             HelpText = "Private key used for node identifying and message signing.")]
         public string PrivateKeyString
         {
-            get => PrivateKey is null ? string.Empty : PrivateKey.ToString();
-
             set
             {
                 PrivateKey = null;
@@ -105,7 +95,7 @@ namespace Libplanet.Seed.Executable
             }
         }
 
-        public PrivateKey PrivateKey { get; set; }
+        public PrivateKey? PrivateKey { get; set; }
 
         [Option(
             'I',
@@ -113,25 +103,9 @@ namespace Libplanet.Seed.Executable
             HelpText = "URL to ICE server (TURN/STUN) to work around NAT.")]
         public string IceServerUrl
         {
-            get
-            {
-                if (IceServer is null)
-                {
-                    return null;
-                }
-
-                Uri uri = IceServer.Urls.First();
-                var uriBuilder = new UriBuilder(uri)
-                {
-                    UserName = IceServer.Username,
-                    Password = IceServer.Credential,
-                };
-                return uriBuilder.Uri.ToString();
-            }
-
             set
             {
-                if (value is null)
+                if (string.IsNullOrEmpty(value))
                 {
                     IceServer = null;
                     return;
@@ -143,25 +117,25 @@ namespace Libplanet.Seed.Executable
             }
         }
 
-        public IceServer IceServer { get; set; }
+        public IceServer? IceServer { get; set; }
 
         [Option(
             longName: "peers",
             HelpText = "A list of peers that must exist in the peer table. " +
                        "The format of each peer is a comma-separated triple of a peer's " +
                        "hexadecimal public key, host, and port number.")]
-        public IEnumerable<string> PeerStrings
+        public IEnumerable<string>? PeerStrings
         {
             get
             {
-                return Peers?.Select(peer => peer.ToString());
+                return Peers.Select(peer => peer.ToString());
             }
 
             set
             {
                 if (value is null)
                 {
-                    Peers = null;
+                    Peers = new BoundPeer[] { };
                     return;
                 }
 
@@ -182,7 +156,7 @@ namespace Libplanet.Seed.Executable
             }
         }
 
-        public IEnumerable<BoundPeer> Peers { get; set; }
+        public IEnumerable<BoundPeer> Peers { get; set; } = new BoundPeer[] { };
 
         public static Options Parse(string[] args, TextWriter errorWriter)
         {
@@ -199,14 +173,15 @@ namespace Libplanet.Seed.Executable
                 Options options = parsed.Value;
                 return options;
             }
-            else if (result is NotParsed<Options> notParsed)
+
+            if (result is NotParsed<Options> notParsed)
             {
                 System.Environment.Exit(
                     notParsed.Errors.All(e => e.Tag is ErrorType.HelpRequestedError) ? 0 : 1
                 );
             }
 
-            return null;
+            throw new Exception("Unexpected error occurred parsing arguments.");
         }
     }
 }

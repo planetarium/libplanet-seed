@@ -1,12 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Libplanet.Crypto;
 using Libplanet.Net;
-using Libplanet.Net.Protocols;
-using Libplanet.Net.Transports;
 using Libplanet.Seed.Executable.Exceptions;
 using Libplanet.Seed.Interfaces;
 using Microsoft.AspNetCore;
@@ -81,7 +79,7 @@ namespace Libplanet.Seed.Executable
                     options.IceServer is null ? new IceServer[] { } : new[] { options.IceServer },
                     AppProtocolVersion.FromToken(options.AppProtocolVersionToken),
                     options.TransportType);
-                Startup.TableSingleton = seed.Table;
+                Startup.Seed = seed;
 
                 IWebHost webHost = WebHost.CreateDefaultBuilder()
                     .UseStartup<SeedStartup<Startup>>()
@@ -112,17 +110,18 @@ namespace Libplanet.Seed.Executable
             catch (InvalidOptionValueException e)
             {
                 string expectedValues = string.Join(", ", e.ExpectedValues);
-                Console.Error.WriteLine($"Unexpected value given through '{e.OptionName}'\n"
-                                        + $"  given value: {e.OptionValue}\n"
-                                        + $"  expected values: {expectedValues}");
+                await Console.Error.WriteLineAsync(
+                    $"Unexpected value given through '{e.OptionName}'\n"
+                    + $"  given value: {e.OptionValue}\n"
+                    + $"  expected values: {expectedValues}");
             }
         }
 
         private class Startup : IContext
         {
-            public RoutingTable Table => TableSingleton;
+            public ConcurrentDictionary<Address, PeerInfo>? Peers => Seed?.PeerInfos;
 
-            internal static RoutingTable TableSingleton { get; set; }
+            internal static Net.Seed? Seed { get; set; }
         }
     }
 }

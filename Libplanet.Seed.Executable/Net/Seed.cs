@@ -1,22 +1,29 @@
-﻿#nullable enable
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Libplanet.Crypto;
 using Libplanet.Net;
-using Libplanet.Net.Protocols;
+using Libplanet.Net.Messages;
 using Libplanet.Net.Transports;
+using Nito.AsyncEx;
 using Serilog;
 
 namespace Libplanet.Seed.Executable.Net
 {
     public class Seed
     {
+        private readonly TimeSpan _refreshInterval = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan _peerLifetime = TimeSpan.FromSeconds(120);
+        private readonly TimeSpan _pingTimeout = TimeSpan.FromSeconds(5);
+
         private readonly PrivateKey _privateKey;
-        private readonly KademliaProtocol _kademliaProtocol;
         private readonly ITransport _transport;
+        private readonly CancellationTokenSource _runtimeCancellationTokenSource;
+        private readonly ILogger _logger;
 
         public Seed(
             PrivateKey privateKey,
@@ -27,25 +34,22 @@ namespace Libplanet.Seed.Executable.Net
             AppProtocolVersion appProtocolVersion,
             string transportType)
         {
-            Table = new RoutingTable(privateKey.ToAddress());
             _privateKey = privateKey;
+            _runtimeCancellationTokenSource = new CancellationTokenSource();
             switch (transportType)
             {
                 case "tcp":
                     _transport = new TcpTransport(
-                        Table,
                         privateKey,
                         appProtocolVersion,
                         null,
                         host: host,
                         listenPort: port,
                         iceServers: iceServers,
-                        differentAppProtocolVersionEncountered: null,
-                        minimumBroadcastTarget: 0);
+                        differentAppProtocolVersionEncountered: null);
                     break;
                 case "netmq":
                     _transport = new NetMQTransport(
-                        Table,
                         privateKey,
                         appProtocolVersion,
                         null,
@@ -53,8 +57,7 @@ namespace Libplanet.Seed.Executable.Net
                         host: host,
                         listenPort: port,
                         iceServers: iceServers,
-                        differentAppProtocolVersionEncountered: null,
-                        minimumBroadcastTarget: 0);
+                        differentAppProtocolVersionEncountered: null);
                     break;
                 default:
                     Log.Error(
@@ -63,13 +66,16 @@ namespace Libplanet.Seed.Executable.Net
                     return;
             }
 
-            _kademliaProtocol = new KademliaProtocol(
-                Table,
-                _transport,
-                privateKey.ToAddress());
+            PeerInfos = new ConcurrentDictionary<Address, PeerInfo>();
+            _transport.ProcessMessageHandler.Register(ReceiveMessageAsync);
+
+            _logger = Log.ForContext<Seed>();
         }
 
-        public RoutingTable Table { get; }
+        public ConcurrentDictionary<Address, PeerInfo> PeerInfos { get; }
+
+        private IEnumerable<BoundPeer> Peers =>
+            PeerInfos.Values.Select(peerState => peerState.BoundPeer);
 
         public async Task StartAsync(
             HashSet<BoundPeer> staticPeers,
@@ -79,7 +85,6 @@ namespace Libplanet.Seed.Executable.Net
             {
                 StartTransportAsync(cancellationToken),
                 RefreshTableAsync(cancellationToken),
-                RebuildConnectionAsync(cancellationToken),
             };
             if (staticPeers.Any())
             {
@@ -102,54 +107,112 @@ namespace Libplanet.Seed.Executable.Net
             await task;
         }
 
+        private async Task ReceiveMessageAsync(Message message)
+        {
+            switch (message)
+            {
+                case Ping ping:
+                    var pong = new Pong { Identity = ping.Identity };
+                    await _transport.ReplyMessageAsync(pong, _runtimeCancellationTokenSource.Token);
+
+                    break;
+
+                case FindNeighbors findNeighbors:
+                    var neighbors = new Neighbors(Peers) { Identity = findNeighbors.Identity };
+                    await _transport.ReplyMessageAsync(
+                        neighbors,
+                        _runtimeCancellationTokenSource.Token);
+                    break;
+            }
+
+            if (message.Remote is BoundPeer boundPeer)
+            {
+                AddOrUpdate(boundPeer);
+            }
+        }
+
+        private async Task AddPeersAsync(
+            BoundPeer[] peers,
+            TimeSpan? timeout,
+            CancellationToken cancellationToken)
+        {
+            IEnumerable<Task> tasks = peers.Select(async peer =>
+                {
+                    try
+                    {
+                        var ping = new Ping();
+                        var stopwatch = new Stopwatch();
+                        stopwatch.Start();
+                        Message? reply = await _transport.SendMessageWithReplyAsync(
+                            peer,
+                            ping,
+                            timeout,
+                            cancellationToken);
+                        TimeSpan elapsed = stopwatch.Elapsed;
+                        stopwatch.Stop();
+
+                        if (reply is Pong)
+                        {
+                            AddOrUpdate(peer, elapsed);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.Error(
+                            e,
+                            "Unexpected error occurred during ping to {Peer}.",
+                            peer);
+                    }
+                });
+
+            await tasks.WhenAll();
+        }
+
+        private PeerInfo AddOrUpdate(BoundPeer peer, TimeSpan? latency = null)
+        {
+            PeerInfo peerInfo;
+            peerInfo.BoundPeer = peer;
+            peerInfo.LastUpdated = DateTimeOffset.UtcNow;
+            peerInfo.Latency = latency;
+            _logger.Debug(
+                "Update peer: {@Peer} {@LastUpdated} {@Latency}",
+                peerInfo.BoundPeer,
+                peerInfo.LastUpdated,
+                peerInfo.Latency);
+            return PeerInfos.AddOrUpdate(
+                peer.Address,
+                peerInfo,
+                (address, info) => peerInfo);
+        }
+
         private async Task RefreshTableAsync(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
-                    await _kademliaProtocol.RefreshTableAsync(
-                        TimeSpan.FromSeconds(60),
-                        cancellationToken);
-                    await _kademliaProtocol.CheckReplacementCacheAsync(cancellationToken);
+                    await Task.Delay(_refreshInterval, cancellationToken);
+                    IEnumerable<BoundPeer> peersToUpdate = PeerInfos.Values
+                        .Where(
+                            peerState => DateTimeOffset.UtcNow - peerState.LastUpdated >
+                                         _peerLifetime)
+                        .Select(state => state.BoundPeer);
+                    await AddPeersAsync(peersToUpdate.ToArray(), _pingTimeout, cancellationToken);
                 }
-                catch (OperationCanceledException e)
+                catch (OperationCanceledException)
                 {
-                    Log.Warning(e, $"{nameof(RefreshTableAsync)}() is cancelled.");
                     throw;
                 }
                 catch (Exception e)
                 {
-                    var msg = "Unexpected exception occurred during " +
-                              $"{nameof(RefreshTableAsync)}(): {{0}}";
-                    Log.Warning(e, msg, e);
-                }
-            }
-        }
-
-        private async Task RebuildConnectionAsync(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                try
-                {
-                    await Task.Delay(TimeSpan.FromMinutes(10), cancellationToken);
-                    await _kademliaProtocol.RebuildConnectionAsync(
-                        Kademlia.MaxDepth,
-                        cancellationToken);
-                }
-                catch (OperationCanceledException e)
-                {
-                    Log.Warning(e, "{FName}() is cancelled.", nameof(RebuildConnectionAsync));
-                    throw;
-                }
-                catch (Exception e)
-                {
-                    Log.Error(
+                    Log.Warning(
                         e,
-                        "Unexpected exception occurred during {FName}()",
-                        nameof(RebuildConnectionAsync));
+                        "Unexpected exception occurred during {FName}().",
+                        nameof(RefreshTableAsync));
                 }
             }
         }
@@ -165,26 +228,26 @@ namespace Libplanet.Seed.Executable.Net
                 {
                     await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
                     Log.Warning("Checking static peers. {@Peers}", boundPeers);
-                    var peersToAdd = boundPeers.Where(peer => !Table.Contains(peer)).ToArray();
+                    var peersToAdd = boundPeers.Where(peer => !Peers.Contains(peer)).ToArray();
                     if (peersToAdd.Any())
                     {
                         Log.Warning("Some of peers are not in routing table. {@Peers}", peersToAdd);
-                        await _kademliaProtocol.AddPeersAsync(
+                        await AddPeersAsync(
                             peersToAdd,
-                            TimeSpan.FromSeconds(5),
+                            _pingTimeout,
                             cancellationToken);
                     }
                 }
-                catch (OperationCanceledException e)
+                catch (OperationCanceledException)
                 {
-                    Log.Warning(e, $"{nameof(CheckStaticPeersAsync)}() is cancelled.");
                     throw;
                 }
                 catch (Exception e)
                 {
-                    var msg = "Unexpected exception occurred during " +
-                              $"{nameof(CheckStaticPeersAsync)}(): {{0}}";
-                    Log.Warning(e, msg, e);
+                    Log.Warning(
+                        e,
+                        "Unexpected exception occurred during {FName}().",
+                        nameof(CheckStaticPeersAsync));
                 }
             }
         }

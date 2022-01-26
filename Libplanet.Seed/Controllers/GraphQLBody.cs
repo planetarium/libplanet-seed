@@ -4,8 +4,8 @@ namespace Libplanet.Seed.Controllers
 {
     public class GraphQLBody
     {
-        public string Query { get; set; }
+        public string? Query { get; set; }
 
-        public JObject Variables { get; set; }
+        public JObject? Variables { get; set; }
     }
 }
