@@ -80,19 +80,16 @@ namespace Libplanet.Seed.Executable
                 {
                     case "tcp":
                         transport = new TcpTransport(
-                            table,
                             privateKey,
                             AppProtocolVersion.FromToken(options.AppProtocolVersionToken),
                             null,
                             host: options.Host,
                             listenPort: options.Port,
                             iceServers: new[] { options.IceServer },
-                            differentAppProtocolVersionEncountered: null,
-                            minimumBroadcastTarget: options.MinimumBroadcastTarget);
+                            differentAppProtocolVersionEncountered: null);
                         break;
                     case "netmq":
                         transport = new NetMQTransport(
-                            table,
                             privateKey,
                             AppProtocolVersion.FromToken(options.AppProtocolVersionToken),
                             null,
@@ -100,8 +97,7 @@ namespace Libplanet.Seed.Executable
                             host: options.Host,
                             listenPort: options.Port,
                             iceServers: new[] { options.IceServer },
-                            differentAppProtocolVersionEncountered: null,
-                            minimumBroadcastTarget: options.MinimumBroadcastTarget);
+                            differentAppProtocolVersionEncountered: null);
                         break;
                     default:
                         Log.Error(
