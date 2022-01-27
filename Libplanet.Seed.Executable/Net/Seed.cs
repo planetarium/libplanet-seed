@@ -212,12 +212,12 @@ namespace Libplanet.Seed.Executable.Net
                         .Select(state => state.BoundPeer)
                         .Take(_maximumPeersToRefresh)
                         .ToArray();
+                    _logger.Debug(
+                        "Refreshing peers in table. (Total: {Total}, Candidate: {Candidate})",
+                        Peers.Count(),
+                        peersToUpdate.Length);
                     if (peersToUpdate.Any())
                     {
-                        _logger.Debug(
-                            "Refreshing peers in table. (Total: {Total}, Candidate: {Candidate})",
-                            Peers.Count(),
-                            peersToUpdate.Length);
                         await AddPeersAsync(
                             peersToUpdate.ToArray(),
                             _pingTimeout,
