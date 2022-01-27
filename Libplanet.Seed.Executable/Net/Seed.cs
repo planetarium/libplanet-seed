@@ -70,7 +70,7 @@ namespace Libplanet.Seed.Executable.Net
                     Log.Error(
                         "-t/--transport-type must be either \"tcp\" or \"netmq\".");
                     Environment.Exit(1);
-                    return;
+                    throw new ArgumentException(nameof(transportType));
             }
 
             PeerInfos = new ConcurrentDictionary<Address, PeerInfo>();
