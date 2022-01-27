@@ -165,7 +165,7 @@ namespace Libplanet.Seed.Executable
         public IEnumerable<BoundPeer> Peers { get; private set; } = new BoundPeer[] { };
 
         [Option(
-            longName: "maximumPeersToRefresh",
+            longName: "maximum-peers-to-refresh",
             Required = false,
             Default = int.MaxValue,
             HelpText = "Maximum number of peers to be refreshed at once " +
@@ -173,14 +173,14 @@ namespace Libplanet.Seed.Executable
         public int MaximumPeersToRefresh { get; set; }
 
         [Option(
-            longName: "refreshInterval",
+            longName: "refresh-interval",
             Required = false,
-            Default = 120,
+            Default = 5,
             HelpText = "Period in second of the peer table refreshing task.")]
         public int RefreshInterval { get; set; }
 
         [Option(
-            longName: "peerLifetime",
+            longName: "peer-lifetime",
             Required = false,
             Default = 120,
             HelpText = "Lifespan by second determining whether " +
@@ -188,7 +188,7 @@ namespace Libplanet.Seed.Executable
         public int PeerLifetime { get; set; }
 
         [Option(
-            longName: "pingTimeout",
+            longName: "ping-timeout",
             Required = false,
             Default = 5,
             HelpText = "Timeout by second of reply to the pong message.")]

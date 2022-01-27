@@ -189,7 +189,11 @@ namespace Libplanet.Seed.Executable.Net
             return PeerInfos.AddOrUpdate(
                 peer.Address,
                 peerInfo,
-                (address, info) => peerInfo);
+                (address, info) =>
+                {
+                    peerInfo.Latency = latency ?? info.Latency;
+                    return peerInfo;
+                });
         }
 
         private async Task RefreshTableAsync(CancellationToken cancellationToken)
