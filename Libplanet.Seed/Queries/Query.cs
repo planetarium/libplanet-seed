@@ -1,25 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using GraphQL.Types;
-using Libplanet.Net;
-using Libplanet.Net.Protocols;
 using Libplanet.Seed.GraphTypes;
 
 namespace Libplanet.Seed.Queries
 {
     public class Query : ObjectGraphType
     {
-        private static RoutingTable _table;
-
-        public Query(RoutingTable table)
+        public Query(ConcurrentDictionary<Address, PeerInfo>? peers)
         {
-            _table = table;
-
-            Field<NonNullGraphType<ListGraphType<NonNullGraphType<PeerStateType>>>>(
+            Field<NonNullGraphType<ListGraphType<NonNullGraphType<PeerInfoType>>>>(
                 "peers",
-                resolve: _ => ListPeers
+                resolve: _ => peers?.Values
             );
         }
-
-        internal static IEnumerable<PeerState> ListPeers => _table.PeerStates;
     }
 }

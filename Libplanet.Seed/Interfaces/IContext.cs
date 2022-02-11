@@ -1,13 +1,14 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using GraphQL.Types;
-using Libplanet.Net.Protocols;
 using Libplanet.Seed.Queries;
 
 namespace Libplanet.Seed.Interfaces
 {
     public interface IContext
     {
-        RoutingTable Table { get; }
+        ConcurrentDictionary<Address, PeerInfo>? Peers { get; }
     }
 
     public static class SeedContext
@@ -21,7 +22,10 @@ namespace Libplanet.Seed.Interfaces
                 context,
                 (_) =>
                 {
-                    var s = new Schema { Query = new Query(context.Table) };
+                    var s = new Schema
+                    {
+                        Query = new Query(context.Peers),
+                    };
                     return s;
                 });
         }

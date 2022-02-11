@@ -3,6 +3,7 @@
     <LangVersion>8.0</LangVersion>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Libplanet.Seed</RootNamespace>
+    <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>NU1701</NoWarn>
     <CodeAnalysisRuleSet>..\Libplanet.Seed.ruleset</CodeAnalysisRuleSet>
