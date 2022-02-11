@@ -56,11 +56,10 @@ namespace Libplanet.Seed.Executable
 
             if (options.IceServer is null && options.Host is null)
             {
-                Log.Error(
-                    "-h/--host is required if -I/--ice-server is not given."
+                throw new ArgumentException(
+                    "-h/--host is required if -I/--ice-server is not given.",
+                    nameof(options.Host)
                 );
-                Environment.Exit(1);
-                return;
             }
 
             if (!(options.IceServer is null || options.Host is null))

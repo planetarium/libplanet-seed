@@ -67,10 +67,9 @@ namespace Libplanet.Seed.Executable.Net
                         differentAppProtocolVersionEncountered: null);
                     break;
                 default:
-                    Log.Error(
-                        "-t/--transport-type must be either \"tcp\" or \"netmq\".");
-                    Environment.Exit(1);
-                    throw new ArgumentException(nameof(transportType));
+                    throw new ArgumentException(
+                        "-t/--transport-type must be either \"tcp\" or \"netmq\".",
+                        nameof(transportType));
             }
 
             PeerInfos = new ConcurrentDictionary<Address, PeerInfo>();
@@ -106,12 +105,11 @@ namespace Libplanet.Seed.Executable.Net
             await _transport.StopAsync(waitFor);
         }
 
-        private async Task StartTransportAsync(CancellationToken cancellationToken)
+        private async Task<Task> StartTransportAsync(CancellationToken cancellationToken)
         {
-            await _transport.StartAsync(cancellationToken);
             Task task = _transport.StartAsync(cancellationToken);
             await _transport.WaitForRunningAsync();
-            await task;
+            return task;
         }
 
         private async Task ReceiveMessageAsync(Message message)
@@ -165,6 +163,10 @@ namespace Libplanet.Seed.Executable.Net
                     }
                     catch (OperationCanceledException)
                     {
+                        _logger.Information(
+                            "Operation canceled during {FName}().",
+                            nameof(AddPeersAsync),
+                            peer);
                         throw;
                     }
                     catch (Exception e)
@@ -226,6 +228,9 @@ namespace Libplanet.Seed.Executable.Net
                 }
                 catch (OperationCanceledException)
                 {
+                    Log.Information(
+                        "Operation canceled during {FName}().",
+                        nameof(RefreshTableAsync));
                     throw;
                 }
                 catch (Exception e)
@@ -261,6 +266,9 @@ namespace Libplanet.Seed.Executable.Net
                 }
                 catch (OperationCanceledException)
                 {
+                    Log.Information(
+                        "Operation canceled during {FName}().",
+                        nameof(CheckStaticPeersAsync));
                     throw;
                 }
                 catch (Exception e)

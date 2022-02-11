@@ -217,7 +217,9 @@ namespace Libplanet.Seed.Executable
                 );
             }
 
-            throw new Exception("Unexpected error occurred parsing arguments.");
+            throw new ArgumentException(
+                "Unexpected error occurred parsing arguments.",
+                nameof(args));
         }
     }
 }
