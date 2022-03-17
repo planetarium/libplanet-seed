@@ -148,7 +148,7 @@ namespace Libplanet.Seed.Executable.Net
                         var ping = new Ping();
                         var stopwatch = new Stopwatch();
                         stopwatch.Start();
-                        Message? reply = await _transport.SendMessageWithReplyAsync(
+                        Message? reply = await _transport.SendMessageAsync(
                             peer,
                             ping,
                             timeout,
