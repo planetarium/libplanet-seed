@@ -69,14 +69,6 @@ namespace Libplanet.Seed.Executable
         public string? AppProtocolVersionToken { get; set; }
 
         [Option(
-            't',
-            "transport-type",
-            Required = false,
-            Default = "tcp",
-            HelpText = "The type of transport to use. Should be either \"tcp\" or \"netmq\".")]
-        public string TransportType { get; set; } = "tcp";
-
-        [Option(
             'k',
             "private-key",
             Required = true,
@@ -123,7 +115,7 @@ namespace Libplanet.Seed.Executable
 
                 var uri = new Uri(value);
                 string[] userInfo = uri.UserInfo.Split(':', count: 2);
-                IceServer = new IceServer(uri, userInfo[0], userInfo[1]);
+                IceServer = new IceServer(uri);
             }
         }
 

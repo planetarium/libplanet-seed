@@ -32,7 +32,6 @@ namespace Libplanet.Seed.Executable.Net
             int workers,
             IceServer[] iceServers,
             AppProtocolVersion appProtocolVersion,
-            string transportType,
             int maximumPeersToToRefresh,
             TimeSpan refreshInterval,
             TimeSpan peerLifetime,
@@ -43,20 +42,7 @@ namespace Libplanet.Seed.Executable.Net
             _peerLifetime = peerLifetime;
             _pingTimeout = pingTimeout;
             _runtimeCancellationTokenSource = new CancellationTokenSource();
-            switch (transportType)
-            {
-                case "tcp":
-                    _transport = new TcpTransport(
-                        privateKey,
-                        appProtocolVersion,
-                        null,
-                        host: host,
-                        listenPort: port,
-                        iceServers: iceServers,
-                        differentAppProtocolVersionEncountered: null);
-                    break;
-                case "netmq":
-                    _transport = new NetMQTransport(
+            _transport = new NetMQTransport(
                         privateKey,
                         appProtocolVersion,
                         null,
@@ -65,13 +51,6 @@ namespace Libplanet.Seed.Executable.Net
                         listenPort: port,
                         iceServers: iceServers,
                         differentAppProtocolVersionEncountered: null);
-                    break;
-                default:
-                    throw new ArgumentException(
-                        "-t/--transport-type must be either \"tcp\" or \"netmq\".",
-                        nameof(transportType));
-            }
-
             PeerInfos = new ConcurrentDictionary<Address, PeerInfo>();
             _transport.ProcessMessageHandler.Register(ReceiveMessageAsync);
 
