@@ -77,7 +77,6 @@ namespace Libplanet.Seed.Executable
                     options.Workers,
                     options.IceServer is null ? new IceServer[] { } : new[] { options.IceServer },
                     AppProtocolVersion.FromToken(options.AppProtocolVersionToken),
-                    options.TransportType,
                     maximumPeersToToRefresh: options.MaximumPeersToRefresh,
                     refreshInterval: TimeSpan.FromSeconds(options.RefreshInterval),
                     peerLifetime: TimeSpan.FromSeconds(options.PeerLifetime),
