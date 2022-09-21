@@ -37,6 +37,14 @@ namespace Libplanet.Seed.Executable
         public int? Port { get; set; }
 
         [Option(
+            'g',
+            "gossip-port",
+            Required = false,
+            Default = null,
+            HelpText = "The port number to listen for gossip.")]
+        public int? GossipPort { get; set; }
+
+        [Option(
             'w',
             "workers",
             Required = false,
@@ -163,6 +171,14 @@ namespace Libplanet.Seed.Executable
             HelpText = "Maximum number of peers to be refreshed at once " +
                        "in periodic peer table refreshing task.")]
         public int MaximumPeersToRefresh { get; set; }
+
+        [Option(
+            longName: "maximum-peers-to-refresh",
+            Required = false,
+            Default = int.MaxValue,
+            HelpText = "Maximum number of peers to be refreshed at once " +
+                       "in periodic peer table refreshing task.")]
+        public int MaximumGossipPeersToRefresh { get; set; }
 
         [Option(
             longName: "refresh-interval",
