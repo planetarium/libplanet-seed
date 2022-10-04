@@ -115,11 +115,21 @@ namespace Libplanet.Seed.Executable.Net
             }
         }
 
-        private async Task AddPeersAsync(
+        /// <summary>
+        /// Returns added peers.
+        /// </summary>
+        /// <param name="peers">The list of <see cref="BoundPeer"/>s to add.</param>
+        /// <param name="timeout">The timeout of each peer dial.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that this
+        /// operation should be canceled.</param>
+        /// <returns>The list of peers that were successfully added.</returns>
+        private async Task<BoundPeer[]> AddPeersAsync(
             BoundPeer[] peers,
             TimeSpan? timeout,
             CancellationToken cancellationToken)
         {
+            List<BoundPeer> success = new List<BoundPeer>();
             IEnumerable<Task> tasks = peers.Select(async peer =>
                 {
                     try
@@ -138,6 +148,7 @@ namespace Libplanet.Seed.Executable.Net
                         if (reply is Pong)
                         {
                             AddOrUpdate(peer, elapsed);
+                            success.Add(peer);
                         }
                     }
                     catch (OperationCanceledException)
@@ -159,6 +170,7 @@ namespace Libplanet.Seed.Executable.Net
                 });
 
             await tasks.WhenAll();
+            return success.ToArray();
         }
 
         private PeerInfo AddOrUpdate(BoundPeer peer, TimeSpan? latency = null)
@@ -199,10 +211,17 @@ namespace Libplanet.Seed.Executable.Net
                         peersToUpdate.Length);
                     if (peersToUpdate.Any())
                     {
-                        await AddPeersAsync(
+                        var updated = await AddPeersAsync(
                             peersToUpdate.ToArray(),
                             _pingTimeout,
                             cancellationToken);
+
+                        // Remove stale peers.
+                        // TODO: Should give grace to peers before removing.
+                        foreach (BoundPeer rm in peersToUpdate.Where(p => !updated.Contains(p)))
+                        {
+                            PeerInfos.TryRemove(rm.Address, out _);
+                        }
                     }
                 }
                 catch (OperationCanceledException)
