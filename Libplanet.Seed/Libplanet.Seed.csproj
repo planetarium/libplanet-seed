@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <LangVersion>8.0</LangVersion>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6</TargetFramework>
     <RootNamespace>Libplanet.Seed</RootNamespace>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -28,7 +28,7 @@
       </IncludeAssets>
     </PackageReference>
     <PackageReference Include="GraphQL" Version="2.4.0" />
-    <PackageReference Include="Libplanet.Net" Version="0.39.0" />
+    <PackageReference Include="Libplanet.Net" Version="0.43.1" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 

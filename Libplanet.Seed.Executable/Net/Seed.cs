@@ -42,7 +42,7 @@ namespace Libplanet.Seed.Executable.Net
             _peerLifetime = peerLifetime;
             _pingTimeout = pingTimeout;
             _runtimeCancellationTokenSource = new CancellationTokenSource();
-            _transport = new NetMQTransport(
+            _transport = NetMQTransport.Create(
                         privateKey,
                         appProtocolVersion,
                         null,
@@ -50,7 +50,9 @@ namespace Libplanet.Seed.Executable.Net
                         host: host,
                         listenPort: port,
                         iceServers: iceServers,
-                        differentAppProtocolVersionEncountered: null);
+                        differentAppProtocolVersionEncountered: null,
+                        messageTimestampBuffer: null)
+                .ConfigureAwait(false).GetAwaiter().GetResult();
             PeerInfos = new ConcurrentDictionary<Address, PeerInfo>();
             _transport.ProcessMessageHandler.Register(ReceiveMessageAsync);
 
@@ -95,14 +97,14 @@ namespace Libplanet.Seed.Executable.Net
         {
             switch (message)
             {
-                case Ping ping:
-                    var pong = new Pong { Identity = ping.Identity };
+                case PingMsg ping:
+                    var pong = new PongMsg { Identity = ping.Identity };
                     await _transport.ReplyMessageAsync(pong, _runtimeCancellationTokenSource.Token);
 
                     break;
 
-                case FindNeighbors findNeighbors:
-                    var neighbors = new Neighbors(Peers) { Identity = findNeighbors.Identity };
+                case FindNeighborsMsg findNeighbors:
+                    var neighbors = new NeighborsMsg(Peers) { Identity = findNeighbors.Identity };
                     await _transport.ReplyMessageAsync(
                         neighbors,
                         _runtimeCancellationTokenSource.Token);
@@ -134,7 +136,7 @@ namespace Libplanet.Seed.Executable.Net
                 {
                     try
                     {
-                        var ping = new Ping();
+                        var ping = new PingMsg();
                         var stopwatch = new Stopwatch();
                         stopwatch.Start();
                         Message? reply = await _transport.SendMessageAsync(
@@ -145,7 +147,7 @@ namespace Libplanet.Seed.Executable.Net
                         TimeSpan elapsed = stopwatch.Elapsed;
                         stopwatch.Stop();
 
-                        if (reply is Pong)
+                        if (reply is PongMsg)
                         {
                             AddOrUpdate(peer, elapsed);
                             success.Add(peer);
