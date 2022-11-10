@@ -97,17 +97,16 @@ namespace Libplanet.Seed.Executable.Net
         {
             switch (message)
             {
-                case PingMsg ping:
-                    var pong = new PongMsg { Identity = ping.Identity };
-                    await _transport.ReplyMessageAsync(pong, _runtimeCancellationTokenSource.Token);
-
-                    break;
-
                 case FindNeighborsMsg findNeighbors:
                     var neighbors = new NeighborsMsg(Peers) { Identity = findNeighbors.Identity };
                     await _transport.ReplyMessageAsync(
                         neighbors,
                         _runtimeCancellationTokenSource.Token);
+                    break;
+
+                default:
+                    var pong = new PongMsg { Identity = message.Identity };
+                    await _transport.ReplyMessageAsync(pong, _runtimeCancellationTokenSource.Token);
                     break;
             }
 
