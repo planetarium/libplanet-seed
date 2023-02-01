@@ -44,14 +44,11 @@ namespace Libplanet.Seed.Executable.Net
             _runtimeCancellationTokenSource = new CancellationTokenSource();
             _transport = NetMQTransport.Create(
                         privateKey,
-                        appProtocolVersion,
-                        null,
-                        workers: workers,
-                        host: host,
-                        listenPort: port,
-                        iceServers: iceServers,
-                        differentAppProtocolVersionEncountered: null,
-                        messageTimestampBuffer: null)
+                        new AppProtocolVersionOptions
+                        {
+                            AppProtocolVersion = appProtocolVersion,
+                        },
+                        new HostOptions(host, iceServers, port ?? 0))
                 .ConfigureAwait(false).GetAwaiter().GetResult();
             PeerInfos = new ConcurrentDictionary<Address, PeerInfo>();
             _transport.ProcessMessageHandler.Register(ReceiveMessageAsync);
