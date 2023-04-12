@@ -92,18 +92,22 @@ namespace Libplanet.Seed.Executable.Net
 
         private async Task ReceiveMessageAsync(Message message)
         {
-            switch (message)
+            switch (message.Content)
             {
                 case FindNeighborsMsg findNeighbors:
-                    var neighbors = new NeighborsMsg(Peers) { Identity = findNeighbors.Identity };
+                    var neighbors = new NeighborsMsg(Peers);
                     await _transport.ReplyMessageAsync(
                         neighbors,
+                        message.Identity,
                         _runtimeCancellationTokenSource.Token);
                     break;
 
                 default:
-                    var pong = new PongMsg { Identity = message.Identity };
-                    await _transport.ReplyMessageAsync(pong, _runtimeCancellationTokenSource.Token);
+                    var pong = new PongMsg();
+                    await _transport.ReplyMessageAsync(
+                        pong,
+                        message.Identity,
+                        _runtimeCancellationTokenSource.Token);
                     break;
             }
 
@@ -143,7 +147,7 @@ namespace Libplanet.Seed.Executable.Net
                         TimeSpan elapsed = stopwatch.Elapsed;
                         stopwatch.Stop();
 
-                        if (reply is PongMsg)
+                        if (reply.Content is PongMsg)
                         {
                             AddOrUpdate(peer, elapsed);
                             success.Add(peer);
