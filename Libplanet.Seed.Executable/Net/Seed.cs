@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -32,6 +33,7 @@ namespace Libplanet.Seed.Executable.Net
             int workers,
             IceServer[] iceServers,
             AppProtocolVersion appProtocolVersion,
+            IImmutableSet<PublicKey> trustedAppProtocolVersionSigners,
             int maximumPeersToToRefresh,
             TimeSpan refreshInterval,
             TimeSpan peerLifetime,
@@ -47,6 +49,7 @@ namespace Libplanet.Seed.Executable.Net
                         new AppProtocolVersionOptions
                         {
                             AppProtocolVersion = appProtocolVersion,
+                            TrustedAppProtocolVersionSigners = trustedAppProtocolVersionSigners,
                         },
                         new HostOptions(host, iceServers, port ?? 0))
                 .ConfigureAwait(false).GetAwaiter().GetResult();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -75,6 +76,31 @@ namespace Libplanet.Seed.Executable
             Required = true,
             HelpText = "An app protocol version token.")]
         public string? AppProtocolVersionToken { get; set; }
+
+        [Option(
+            't',
+            "trusted-apv-signer",
+            Required = false,
+            Default = new string[] { },
+            HelpText = "The set of public keys to trust when a seed encounters message" +
+            "with an app protocol version that is different from seed's app protocol version.")]
+        public IEnumerable<string> TrustedAppProtocolVersionSignerStrings
+        {
+            get
+            {
+                return TrustedAppProtocolVersionSigners.Select(
+                    signer => signer.ToString());
+            }
+
+            set
+            {
+                TrustedAppProtocolVersionSigners = value.Select(
+                    str => new PublicKey(ByteUtil.ParseHex(str))).ToImmutableHashSet();
+            }
+        }
+
+        public IImmutableSet<PublicKey> TrustedAppProtocolVersionSigners { get; private set; }
+            = ImmutableHashSet<PublicKey>.Empty;
 
         [Option(
             'k',
