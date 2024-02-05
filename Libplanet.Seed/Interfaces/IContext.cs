@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using GraphQL.Types;
+using Libplanet.Crypto;
 using Libplanet.Seed.Queries;
 
 namespace Libplanet.Seed.Interfaces
