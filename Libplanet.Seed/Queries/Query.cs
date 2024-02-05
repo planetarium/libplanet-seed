@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using GraphQL.Types;
+using Libplanet.Crypto;
 using Libplanet.Seed.GraphTypes;
 
 namespace Libplanet.Seed.Queries

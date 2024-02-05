@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Libplanet.Crypto;
 using Libplanet.Net;
 using Libplanet.Net.Messages;
+using Libplanet.Net.Options;
 using Libplanet.Net.Transports;
 using Nito.AsyncEx;
 using Serilog;

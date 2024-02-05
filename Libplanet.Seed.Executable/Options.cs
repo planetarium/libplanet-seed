@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using CommandLine;
+using Libplanet.Common;
 using Libplanet.Crypto;
 using Libplanet.Net;
 
