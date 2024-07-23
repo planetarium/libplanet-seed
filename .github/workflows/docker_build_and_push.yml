@@ -9,10 +9,32 @@ jobs:
   build_and_push:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Build the Docker image
-      run: docker build . -t planetariumhq/libplanet-seed:git-${{ github.sha }}
+    - name: checkout
+      uses: actions/checkout@v3
     - name: login
       run: docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_ACCESS_TOKEN }}'
-    - name: push git version
-      run: docker push planetariumhq/libplanet-seed:git-${{ github.sha }}
+    - name: setup-qemu
+      run: |
+        docker run --rm --privileged multiarch/qemu-user-static \
+        --reset \
+        -p yes
+    - name: build-and-push-amd64
+      run: |
+        docker build . \
+          -f ${{ matrix.docker.dockerfile }}.amd64 \
+          -t ${{ matrix.docker.repo }}:git-${{ github.sha }}-amd64 \
+          --build-arg COMMIT=git-${{ github.sha }}
+        docker push ${{ matrix.docker.repo }}:git-${{ github.sha }}-amd64
+    - name: build-and-push-arm64v8
+      run: |
+        docker build . \
+          -f ${{ matrix.docker.dockerfile }}.arm64v8 \
+          -t ${{ matrix.docker.repo }}:git-${{ github.sha }}-arm64v8 \
+          --build-arg COMMIT=git-${{ github.sha }}
+        docker push ${{ matrix.docker.repo }}:git-${{ github.sha }}-arm64v8
+    - name: merge-manifest-and-push
+      run: |
+        docker manifest create ${{ matrix.docker.repo }}:git-${{ github.sha }} \
+          --amend ${{ matrix.docker.repo }}:git-${{ github.sha }}-amd64 \
+          --amend ${{ matrix.docker.repo }}:git-${{ github.sha }}-arm64v8
+        docker manifest push ${{ matrix.docker.repo }}:git-${{ github.sha }}
