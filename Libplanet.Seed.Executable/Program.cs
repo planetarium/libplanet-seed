@@ -117,7 +117,7 @@ namespace Libplanet.Seed.Executable
                         await Task.WhenAll(
                             webHost.RunAsync(cts.Token),
                             seed.StartAsync(new HashSet<BoundPeer>(options.Peers), cts.Token),
-                            gossip.StartAsync(new HashSet<BoundPeer>(options.Peers), cts.Token));
+                            gossip.StartAsync(new HashSet<BoundPeer>(), cts.Token));
                     }
                     catch (OperationCanceledException)
                     {
@@ -140,7 +140,7 @@ namespace Libplanet.Seed.Executable
         {
             public ConcurrentDictionary<Address, PeerInfo>? Peers => Seed?.PeerInfos;
 
-            public ConcurrentDictionary<Address, PeerInfo>? GossipPeers => Seed?.PeerInfos;
+            public ConcurrentDictionary<Address, PeerInfo>? GossipPeers => Gossip?.PeerInfos;
 
             internal static Net.Seed? Seed { get; set; }
 
