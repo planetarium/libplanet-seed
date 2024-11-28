@@ -10,6 +10,8 @@ namespace Libplanet.Seed.Interfaces
     public interface IContext
     {
         ConcurrentDictionary<Address, PeerInfo>? Peers { get; }
+
+        ConcurrentDictionary<Address, PeerInfo>? GossipPeers { get; }
     }
 
     public static class SeedContext
@@ -25,7 +27,7 @@ namespace Libplanet.Seed.Interfaces
                 {
                     var s = new Schema
                     {
-                        Query = new Query(context.Peers),
+                        Query = new Query(context.Peers, context.GossipPeers),
                     };
                     return s;
                 });
